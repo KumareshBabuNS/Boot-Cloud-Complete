@@ -1,18 +1,19 @@
 package io.pivotal.boot.samples.service;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.xml.soap.Detail;
-
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import io.pivotal.boot.samples.config.DetailProperties;
 import io.pivotal.boot.samples.domain.Company;
 import io.pivotal.boot.samples.domain.Quote;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.hateoas.Resource;
 import org.springframework.http.HttpMethod;
@@ -26,35 +27,38 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class IntegrationService {
 
+
+	private Logger logger = LoggerFactory.getLogger(IntegrationService.class);
 	private RestTemplate client;
 	private DetailProperties properties;
+
+	@Autowired
+	private LoadBalancerClient lb;
 
 	private Map<String,Quote> quotesCache = new ConcurrentHashMap<>();
 	private Map<String,Company> companiesCache = new ConcurrentHashMap();
 
 	@Autowired
-	public IntegrationService(@LoadBalanced RestTemplate client, DetailProperties properties) {
+	public IntegrationService (RestTemplate client, DetailProperties properties) {
 		this.client = client;
 		this.properties = properties;
 	}
 
 
-	@HystrixCommand(fallbackMethod = "quoteFromCache",  commandProperties = {
-			@HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
-			@HystrixProperty(name = "execution.isolation.strategy", value = "SEMAPHORE")
-	})
+
 	public Quote findQuote(String symbol){
-		ResponseEntity<Quote> quoteResponse = client.getForEntity(properties.getQuotesService()+"/quotes/{symbol}",Quote.class,symbol);
+		ServiceInstance instance = lb.choose(properties.getQuotesService());
+		logger.info("Calling service at: {}", instance.getHost());
+		ResponseEntity<Quote> quoteResponse = client.getForEntity("http://"+properties.getQuotesService()+"/quotes/{symbol}",Quote.class,symbol);
 		quotesCache.put(symbol,quoteResponse.getBody());
 		return quoteResponse.getBody();
 	}
 
-	@HystrixCommand(fallbackMethod = "companyFromCache",  commandProperties = {
-			@HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
-			@HystrixProperty(name = "execution.isolation.strategy", value = "SEMAPHORE")
-	})
+
 	public Company findCompany(String symbol){
-		ResponseEntity<Resource<Company>> resource = client.exchange(properties.getCompaniesService()+"/companies/{symbol}", HttpMethod.GET,null,new ParameterizedTypeReference<Resource<Company>>() {},symbol);
+		ServiceInstance instance = lb.choose(properties.getCompaniesService());
+		logger.info("Calling service at: {}", instance.getHost());
+		ResponseEntity<Resource<Company>> resource = client.exchange("http://"+properties.getCompaniesService()+"/companies/{symbol}", HttpMethod.GET,null,new ParameterizedTypeReference<Resource<Company>>() {},symbol);
 		companiesCache.put(symbol,resource.getBody().getContent());
 		return resource.getBody().getContent();
 	}

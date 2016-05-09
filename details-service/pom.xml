@@ -30,6 +30,7 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
+
 	</repositories>
 
 	<properties>
@@ -52,16 +53,13 @@
 		</dependency>
 		<!-- Spring Cloud Dependencies-->
 		<dependency>
-			<groupId>io.pivotal.spring.cloud</groupId>
-			<artifactId>spring-cloud-services-starter-service-registry</artifactId>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-eureka</artifactId>
+
 		</dependency>
 		<dependency>
-			<groupId>io.pivotal.spring.cloud</groupId>
-			<artifactId>spring-cloud-services-starter-config-client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.pivotal.spring.cloud</groupId>
-			<artifactId>spring-cloud-services-starter-circuit-breaker</artifactId>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-config</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -80,9 +78,9 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
-				<groupId>io.pivotal.spring.cloud</groupId>
-				<artifactId>spring-cloud-services-starter-parent</artifactId>
-				<version>1.0.0.RELEASE</version>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-netflix</artifactId>
+				<version>1.1.0.BUILD-SNAPSHOT</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -98,6 +96,5 @@
 			</plugin>
 		</plugins>
 	</build>
-	
 
 </project>

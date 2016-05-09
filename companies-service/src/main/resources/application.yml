@@ -1,3 +1,7 @@
 server:
   port: 9101
-debug: true
+eureka:
+  instance:
+    hostname: ${vcap.application.uris[0]}
+    non-secure-port: 80
+    instanceId: ${spring.application.name}:${spring.application.instance_id:${random.value}}

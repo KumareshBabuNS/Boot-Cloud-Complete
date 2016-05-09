@@ -1,5 +1,14 @@
 server:
   port: 9092
 details:
-  quotesService: http://localhost:9100
-  companiesService: http://localhost:9101
+  quotesService: QUOTES-SERVICE
+  companiesService: COMPANIES-SERVICE
+ribbon:
+  IsSecure: false
+  eureka:
+    approximateZoneFromHostname: true
+eureka:
+  instance:
+    hostname: ${vcap.application.uris[0]}
+    non-secure-port: 80
+    instanceId: ${spring.application.name}:${spring.application.instance_id:${random.value}}
