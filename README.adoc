@@ -1,0 +1,25 @@
+== Demo of Eureka cross datacenter replication
+
+=== Deploying Eureka server
+
+First deploy one eureka on each datacenter. The `eureka-server` folder has a manifest for PWS and PEZ.
+
+`cf push -f manifest-pws.yml`
+
+Point your cli to PEZ ...
+
+`cf push -f manifes-pez.yml`
+
+Once you finish you should have a standalone eureka server that looks like this:
+
+image::eureka-single.png[link="https://cloud.githubusercontent.com/assets/803893/15124850/f52ad6c8-15f7-11e6-9e47-a1eee337fe5f.png"]
+
+Now you need to configure each eureka server to point to each other, do that by setting an environment variable. For instance
+on PWS you would run `cf set-env eureka-east eureka.client.serviceUrl.defaultZone http://eureka-west-postprophetic-pili.cfapps.pez.pivotal.io/eureka/`
+
+Make sure you replace with the proper URL of your PEZ running eureka, and that `/eureka/` is at the end of your path.
+
+If you visit eureka now, you can see that it has a replica, that replica is also listed on available replicas and that eureka is an app listed with 2
+instances:
+
+image::eureka-peer.png[link="https://cloud.githubusercontent.com/assets/803893/15126840/06a51080-1602-11e6-96fa-43f49fac0f42.png"]

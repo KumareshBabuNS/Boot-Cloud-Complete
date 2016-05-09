@@ -1,0 +1,9 @@
+---
+applications:
+
+- name: eureka-west
+  host: eureka-west-${random-word}
+  buildpack: java_buildpack_offline
+  instances: 1
+  memory: 1G
+  path: target/eureka-server-0.0.1-SNAPSHOT.jar
