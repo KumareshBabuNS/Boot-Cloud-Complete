@@ -1,0 +1,8 @@
+---
+applications:
+
+- name: details-service-east
+  host: details-service-east-${random-word}
+  buildpack: java_buildpack
+  memory: 1G
+  path: target/details-service-0.0.1-SNAPSHOT.jar

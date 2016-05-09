@@ -12,7 +12,7 @@ Point your cli to PEZ ...
 
 Once you finish you should have a standalone eureka server that looks like this:
 
-image::eureka-single.png[link="https://cloud.githubusercontent.com/assets/803893/15124850/f52ad6c8-15f7-11e6-9e47-a1eee337fe5f.png"]
+image::https://cloud.githubusercontent.com/assets/803893/15124850/f52ad6c8-15f7-11e6-9e47-a1eee337fe5f.png[]
 
 Now you need to configure each eureka server to point to each other, do that by setting an environment variable. For instance
 on PWS you would run `cf set-env eureka-east eureka.client.serviceUrl.defaultZone http://eureka-west-postprophetic-pili.cfapps.pez.pivotal.io/eureka/`
@@ -22,4 +22,87 @@ Make sure you replace with the proper URL of your PEZ running eureka, and that `
 If you visit eureka now, you can see that it has a replica, that replica is also listed on available replicas and that eureka is an app listed with 2
 instances:
 
-image::eureka-peer.png[link="https://cloud.githubusercontent.com/assets/803893/15126840/06a51080-1602-11e6-96fa-43f49fac0f42.png"]
+image::https://cloud.githubusercontent.com/assets/803893/15126840/06a51080-1602-11e6-96fa-43f49fac0f42.png[]
+
+=== Deploying the apps
+
+There's 3 applications:
+
+* Details Service: Aggregates calls from two other services (quotes and companies)
+* Quotes
+* Companies
+
+image::https://cloud.githubusercontent.com/assets/803893/15123228/df1641e4-15f0-11e6-8c79-5379f600cba5.png[]
+
+We want to deploy quotes and companies on EAST and WEST, the `quotes-service` and `companies-service` folders have
+manifest files from PWS and PEZ, just deploy each app and make sure you wire them to the right eureka-server using
+`eureka.client.serviceUrl.defaultZone` environment variable for example
+
+`cf push -f manifest-pws.yml --no-start`
+`cf set-env quotes-service-east eureka.client.serviceUrl.defaultZone http://eureka-east-oxycephalic-inculpableness.cfapps.io/eureka/`
+`cf start quotes-service-east`
+
+*Do it for companies-service, details-service and repeat it on PEZ*
+
+By the end of this, you should have an eureka server (any datacenter) that looks like this:
+
+image:https://cloud.githubusercontent.com/assets/803893/15128701/6371f310-160b-11e6-8945-324860bb717d.png[]
+
+You eureka clients now have two Availability zones configured (cfapps.io and cfapps.pez.pivotal.io) the real trick comes from
+ribbon using a ZoneAwareLoadBalancer that will *prefer* the service on the same zone.
+
+Instead of manually setting the zone for each service, we avoided that and configured the client (details-service) to use
+a configuration called `ribbon.eureka.approximateZoneFromHostname`. With this flag, details-service on east will always pick
+companies and quotes from the same DC.
+
+==== Simulating a failure
+
+image:https://cloud.githubusercontent.com/assets/803893/15123237/e6e44a42-15f0-11e6-97c6-d35f7780f572.png[]
+
+To test this deployment visit your details-service on the following endpoint: `${DETAILS_HOST}/details/{symbol}` where symbol is a
+Stock symbol such as EMC, VMW or MSFT
+
+If you tail the logs of your details service you'll have:
+
+[source]
+----
+2016-05-09T17:30:22.35-0400 [APP/0]      OUT 2016-05-09 21:30:22.357  INFO 29 --- [nio-8080-exec-5] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-east-postesophageal-myokymia.cfapps.io
+2016-05-09T17:30:22.40-0400 [APP/0]      OUT 2016-05-09 21:30:22.403  INFO 29 --- [nio-8080-exec-5] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+2016-05-09T17:30:25.45-0400 [APP/0]      OUT 2016-05-09 21:30:25.458  INFO 29 --- [nio-8080-exec-7] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-east-postesophageal-myokymia.cfapps.io
+2016-05-09T17:30:28.55-0400 [APP/0]      OUT 2016-05-09 21:30:28.557  INFO 29 --- [nio-8080-exec-9] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-east-postesophageal-myokymia.cfapps.io
+2016-05-09T17:30:28.59-0400 [APP/0]      OUT 2016-05-09 21:30:28.596  INFO 29 --- [nio-8080-exec-9] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+2016-05-09T17:30:31.66-0400 [APP/0]      OUT 2016-05-09 21:30:31.660  INFO 29 --- [nio-8080-exec-1] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-east-postesophageal-myokymia.cfapps.io
+2016-05-09T17:30:31.70-0400 [APP/0]      OUT 2016-05-09 21:30:31.704  INFO 29 --- [nio-8080-exec-1] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+2016-05-09T17:30:34.75-0400 [APP/0]      OUT 2016-05-09 21:30:34.759  INFO 29 --- [nio-8080-exec-3] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-east-postesophageal-myokymia.cfapps.io
+2016-05-09T17:30:34.79-0400 [APP/0]      OUT 2016-05-09 21:30:34.798  INFO 29 --- [nio-8080-exec-3] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+
+----
+
+You can notice that refreshing the service several times we always hit the `east` endpoint since we are calling details on `east`.
+
+Stop one of the services:
+
+`cf stop quotes-service-east`
+
+Curl the details endpoint a few times again and check the logs:
+
+[source]
+----
+2016-05-09T17:34:05.80-0400 [APP/0]      OUT 2016-05-09 21:34:05.800  INFO 29 --- [nio-8080-exec-4] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-west-caseless-sruti.cfapps.pez.pivotal.io
+2016-05-09T17:34:06.41-0400 [APP/0]      OUT 2016-05-09 21:34:06.418  INFO 29 --- [nio-8080-exec-4] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+2016-05-09T17:34:08.89-0400 [APP/0]      OUT 2016-05-09 21:34:08.899  INFO 29 --- [nio-8080-exec-6] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-west-caseless-sruti.cfapps.pez.pivotal.io
+2016-05-09T17:34:09.29-0400 [APP/0]      OUT 2016-05-09 21:34:09.294  INFO 29 --- [nio-8080-exec-6] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+2016-05-09T17:34:12.00-0400 [APP/0]      OUT 2016-05-09 21:34:11.994  INFO 29 --- [nio-8080-exec-8] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-west-caseless-sruti.cfapps.pez.pivotal.io
+2016-05-09T17:34:12.38-0400 [APP/0]      OUT 2016-05-09 21:34:12.385  INFO 29 --- [nio-8080-exec-8] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+2016-05-09T17:34:15.09-0400 [APP/0]      OUT 2016-05-09 21:34:15.092  INFO 29 --- [io-8080-exec-10] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-west-caseless-sruti.cfapps.pez.pivotal.io
+2016-05-09T17:34:15.51-0400 [APP/0]      OUT 2016-05-09 21:34:15.511  INFO 29 --- [io-8080-exec-10] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+2016-05-09T17:34:18.19-0400 [APP/0]      OUT 2016-05-09 21:34:18.197  INFO 29 --- [nio-8080-exec-3] i.p.b.s.service.IntegrationService       : Calling service at: quotes-service-west-caseless-sruti.cfapps.pez.pivotal.io
+2016-05-09T17:34:18.58-0400 [APP/0]      OUT 2016-05-09 21:34:18.584  INFO 29 --- [nio-8080-exec-3] i.p.b.s.service.IntegrationService       : Calling service at: companies-service-east-proamateur-saltbush.cfapps.io
+----
+
+Notice how the `west` quotes service is now being called.
+
+=== Caveats
+
+1. Be aware the cache sync of eureka, it may take up to 30 seconds for details not fail calls and switch to the west service
+2. To use `ribbon.eureka.approximateZoneFromHostname` we had to change the details-service to be on SNAPSHOT as it's a feature not supported on the stable release of spring cloud netflix

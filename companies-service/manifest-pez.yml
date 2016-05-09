@@ -1,0 +1,8 @@
+---
+applications:
+
+- name: companies-service-west
+  host: companies-service-west-${random-word}
+  buildpack: java_buildpack_offline
+  memory: 1G 
+  path: target/companies-service-0.0.1-SNAPSHOT.jar
