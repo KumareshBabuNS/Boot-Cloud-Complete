@@ -35,10 +35,7 @@ public class DetailsService {
 
 	@RequestMapping(value = "/details/{symbol}")
 	public Details details(@PathVariable("symbol") String symbol){
-		ResponseEntity<Quote> quoteResponse = client.getForEntity(properties.getQuotesService()+"/quotes/{symbol}",Quote.class,symbol);
-		ResponseEntity<Resource<Company>> resource = client.exchange(properties.getCompaniesService()+"/companies/{symbol}", HttpMethod.GET,null,new ParameterizedTypeReference<Resource<Company>>() {},symbol);
-		Details details = new Details(resource.getBody().getContent(),quoteResponse.getBody());
-		return details;
+		return null;
 	}
 
 }
