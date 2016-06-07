@@ -23,19 +23,20 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 public class DetailsService {
 
-	private RestTemplate client;
-	private DetailProperties properties;
+
+	private QuotesClient quotesClient;
+	private CompanyClient companyClient;
 
 	@Autowired
-	public DetailsService(RestTemplate client, DetailProperties properties) {
-		this.client = client;
-		this.properties = properties;
+	public DetailsService(CompanyClient companyClient, QuotesClient quotesClient) {
+		this.companyClient = companyClient;
+		this.quotesClient = quotesClient;
 	}
 
 
 	@RequestMapping(value = "/details/{symbol}")
 	public Details details(@PathVariable("symbol") String symbol){
-		return null;
+		return new Details(companyClient.fetchCompany(symbol),quotesClient.fetchQuote(symbol));
 	}
 
 }
