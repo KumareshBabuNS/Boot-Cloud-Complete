@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.metrics.CounterService;
 import org.springframework.boot.actuate.metrics.GaugeService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,16 +42,21 @@ public class QuotesService {
 	}
 
 	@RequestMapping(value = "/quotes/{symbol}")
-	public Quote fetch(@PathVariable("symbol") String symbol){
+	public ResponseEntity<Quote> fetch(@PathVariable("symbol") String symbol){
 		Long start = System.currentTimeMillis();
-		ResponseEntity<String> response = client.getForEntity(yahooEndpoint,String.class, symbol);
+		ResponseEntity<String> quoteResponse = client.getForEntity(yahooEndpoint,String.class, symbol);
 		Long end = System.currentTimeMillis();
 		cumulativeTime.addAndGet(end-start);
 		counter.incrementAndGet();
 		counterService.increment("yahoo.quotes");
-		Quote quote = new Quote(response.getBody());
+		Quote quote = new Quote(quoteResponse.getBody());
 		gaugeService.submit("yahoo.response",cumulativeTime.get()/counter.get());
-		return quote;
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("CaSeSeNsItIvE","ItDoEsNoTmAtTeR");
+		ResponseEntity<Quote> response = new ResponseEntity<Quote>(quote,headers, HttpStatus.OK);
+
+
+		return response;
 	}
 
 

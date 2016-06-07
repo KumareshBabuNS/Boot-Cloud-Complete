@@ -10,4 +10,7 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
  */
 @RepositoryRestResource(path = "companies")
 public interface CompanyRepository extends PagingAndSortingRepository<Company,String> {
+
+	public Iterable<Company> findBySector(String sector);
+
 }
