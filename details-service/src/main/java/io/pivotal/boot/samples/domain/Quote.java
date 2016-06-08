@@ -1,6 +1,10 @@
 package io.pivotal.boot.samples.domain;
 
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -20,6 +24,7 @@ public class Quote {
 	private Double daysLow;
 	@JsonProperty("DaysHigh")
 	private Double daysHigh;
+
 
 	public String getSymbol() {
 		return symbol;

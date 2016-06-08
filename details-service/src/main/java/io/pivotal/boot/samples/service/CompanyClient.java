@@ -1,5 +1,9 @@
 package io.pivotal.boot.samples.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import io.pivotal.boot.samples.config.DetailProperties;
 import io.pivotal.boot.samples.domain.Company;
 
@@ -18,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 public class CompanyClient {
 	private DetailProperties properties;
 	private RestTemplate client;
+	private Map<String,Company> cache = new HashMap<>();
 
 	@Autowired
 	public CompanyClient(DetailProperties properties, RestTemplate client) {
@@ -33,6 +38,11 @@ public class CompanyClient {
 						null,
 						new ParameterizedTypeReference<Resource<Company>>() {},
 						symbol);
+		cache.put(symbol,resource.getBody().getContent());
 		return resource.getBody().getContent();
+	}
+
+	private Company getFromCache(String symbol){
+		return cache.get(symbol);
 	}
 }
