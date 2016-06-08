@@ -28,7 +28,7 @@ public class QuotesClient {
 		this.properties = properties;
 
 	}
-
+	@HystrixCommand(fallbackMethod = "getFromCache")
 	public Quote fetchQuote(String symbol){
 		ResponseEntity<Quote> quoteResponse = client.getForEntity(properties.getQuotesService()+"/quotes/{symbol}",Quote.class,symbol);
 		cache.put(symbol,quoteResponse.getBody());

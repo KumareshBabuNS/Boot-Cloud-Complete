@@ -30,6 +30,7 @@ public class CompanyClient {
 		this.client = client;
 	}
 
+	@HystrixCommand(fallbackMethod = "getFromCache")
 	public Company fetchCompany(String symbol){
 		ResponseEntity<Resource<Company>> resource = client
 				.exchange(properties
