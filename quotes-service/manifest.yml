@@ -4,9 +4,6 @@ applications:
 - name: quotes-service
   host: quotes-service
   memory: 512M
-
+  buildpack: java_buildpack_offline
   path: target/quotes-service-0.0.1-SNAPSHOT.jar
 
-  env:
-   JPB_CONFIG_DEBUG: '{enabled: true, port: 8000}'
-   JAVA_OPTS: "-Xdebug -Xrunjdwp:server=y,transport=dt_socket,suspend=n,address=8000"
