@@ -2,13 +2,11 @@
 applications:
 
 - name: companies-service
-  host: companies-service
-  buildpack: java_buildpack_offline
+  host: companies-service-${random-word}
+  buildpack: java_buildpack
   memory: 1G 
   path: target/companies-service-0.0.1-SNAPSHOT.jar
   services:
    - service-registry
    - config-server
    - companies-db
-  env:
-   CF_TARGET: https://api.pcf10.cloud.fe.pivotal.io
