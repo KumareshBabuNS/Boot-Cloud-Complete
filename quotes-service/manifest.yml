@@ -2,14 +2,13 @@
 applications:
 
 - name: quotes-service
-  host: quotes-service
-  buildpack: java_buildpack_offline
-  instances: 2
+  host: quotes-service-${random-word}
+  buildpack: java_buildpack
+  instances: 1
   memory: 512M
   path: target/quotes-service-0.0.1-SNAPSHOT.jar
   services:
    - service-registry
    - config-server
-   - cloud-bus
   env:
-   CF_TARGET: https://api.pcf10.cloud.fe.pivotal.io
+   CF_TARGET: https://api.run.haas-64.pez.pivotal.io
