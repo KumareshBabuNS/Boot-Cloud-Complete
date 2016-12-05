@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
-@EnableDiscoveryClient
 public class QuotesServiceApplication {
 
 	public static void main(String[] args) {
